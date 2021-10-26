@@ -1,0 +1,505 @@
+openapi: "3.0.0"
+info:
+  version: v1
+  title: Auth Service
+  license:
+    name: MIT
+servers:
+  - url: https://api.stargate.xsga.local{basePath}
+    description: The production API server
+    variables:
+      basePath:
+        default: /auth/v1
+paths:
+  /users:
+    post:
+      summary: Create user
+      operationId: createUser
+      tags:
+        - user
+      requestBody:
+        description: Body for creating user
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateBody"
+      responses:
+        "201":
+          description: The user created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    get:
+      summary: List users
+      operationId: listUsers
+      tags:
+        - user
+      parameters:
+        - name: _limit
+          in: query
+          description: How many items to return at one time
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+            maximum: 1000
+        - name: _offset
+          in: query
+          description: How many items will be skip
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: _select
+          in: query
+          description: Specifies which document fields to include or exclude
+          required: false
+          schema:
+            type: string
+        - name: _sort
+          in: query
+          description: Specifies which document fields to sort
+          required: false
+          schema:
+            type: string
+        - name: active
+          in: query
+          description: is user active
+          required: false
+          schema:
+            type: boolean
+        - name: ns
+          in: query
+          description: the namespace
+          required: false
+          schema:
+            oneOf:
+              - type: array
+                items:
+                  type: string
+                  minLength: 1
+              - type: string
+                minLength: 1
+        - name: ns_like
+          in: query
+          description: Which namespace users blong to, regix
+          required: false
+          schema:
+            type: string
+            minLength: 1
+        - name: roles
+          in: query
+          description: the role
+          required: false
+          schema:
+            oneOf:
+              - type: array
+                items:
+                  type: string
+                  minLength: 1
+              - type: string
+                minLength: 1
+        - name: id_like
+          in: query
+          description: id, regix
+          required: false
+          schema:
+            type: string
+            minLength: 1
+        - name: username_like
+          in: query
+          description: username, regix
+          required: false
+          schema:
+            type: string
+            minLength: 1
+        - name: name_like
+          in: query
+          description: name, regix
+          required: false
+          schema:
+            type: string
+            minLength: 1
+        - name: nickname_like
+          in: query
+          description: name, regix
+          required: false
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: A paged array of users
+          headers:
+            X-Total-Count:
+              description: Total count of all documents match the query
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}:
+    get:
+      summary: Get user by id
+      operationId: getUser
+      tags:
+        - user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The id of user
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The user with given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      summary: Update user
+      operationId: updateUser
+      tags:
+        - user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The id of user
+          schema:
+            type: string
+      requestBody:
+        description: User to be updated
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateBody"
+      responses:
+        "200":
+          description: The user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      summary: delete user
+      operationId: deleteUser
+      tags:
+        - user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The id of user
+          schema:
+            type: string
+      responses:
+        "204":
+          description: user deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+security:
+  - bearerAuth: []
+
+components:
+  responses:
+    NoContent:
+      description: The resource was deleted successfully.
+    BadRequest:
+      description: The request is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Err"
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Err"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Err"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Err"
+    InternalError:
+      description: unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Err"
+  schemas:
+    UserCommonPropDoc:
+      type: object
+      description: 用户一般属性
+      properties:
+        avatar:
+          type: string
+          description: 头像
+        nickname:
+          type: string
+          description: 昵称
+        idnumber:
+          type: string
+          description: 身份证号
+        qq:
+          type: string
+          description: QQ号
+        wechat:
+          type: string
+          description: 微信号
+        personalinfo:
+          type: string
+          description: 个人简介
+        birthday:
+          type: string
+          format: date-time
+          description: 出生日期
+        hobby:
+          type: string
+          description: 兴趣爱好
+        address:
+          type: string
+          description: 地址
+        country:
+          type: string
+          description: 国家
+        gender:
+          type: string
+          enum: ["UNKOWN", "MALE", "FEMALE", "OTHER"]
+          description: 性别
+        company:
+          type: string
+          description: 公司名
+        worknumber:
+          type: string
+          description: 工号
+        wordyear:
+          type: string
+          description: 工龄
+        credential:
+          type: string
+          description: 资质
+        position:
+          type: string
+          description: 职位
+        school:
+          type: string
+          description: 毕业院校
+        major:
+          type: string
+          description: 专业
+        education:
+          type: string
+          description: 学历
+        class:
+          type: string
+          description: 班级
+        teacher:
+          type: string
+          description: 导师
+        bank:
+          type: string
+          description: 开户行
+        bankcardnumber:
+          type: string
+          description: 银行卡号
+        data:
+          type: string
+          description: 自定义信息
+
+    UserDefaultPropDoc:
+      type: object
+      description: 用户通用属性
+      properties:
+        ns:
+          type: string
+          description: 所在的ns
+        username:
+          readOnly: true
+          type: string
+          description: 用户名
+        phone:
+          type: string
+          description: 电话
+        email:
+          type: string
+          description: 邮箱
+        roles:
+          description: 角色
+          type: array
+          items:
+            type: string
+            description: 角色名称
+        lock:
+          description: 是否锁定
+          type: boolean
+        active:
+          description: 是否激活
+          type: boolean
+        expireAt:
+          type: string
+          format: date-time
+          description: 过期时间
+        source:
+          type: string
+          description: 用户来源
+          enum:
+            [
+              DEFAULT,
+              PHONE,
+              EMAIL,
+              PASSWORD,
+              GITHUB,
+              WX,
+              WXAPP,
+              WXCORP_INSEDE,
+              WXCORP_OUTSIDE,
+            ]
+
+    User:
+      allOf:
+        - $ref: "#/components/schemas/UserDefaultPropDoc"
+        - $ref: "#/components/schemas/UserCommonPropDoc"
+        - $ref: "#/components/schemas/MongoDefault"
+
+    UserCreateBody:
+      allOf:
+        - $ref: "#/components/schemas/UserDefaultPropDoc"
+        - $ref: "#/components/schemas/UserCommonPropDoc"
+        - type: object
+          required:
+            - ns
+            - password
+          properties:
+            ns:
+              type: string
+            username:
+              type: string
+            password:
+              type: string
+              description: 密码
+
+    UserUpdateBody:
+      allOf:
+        - $ref: "#/components/schemas/UserCommonPropDoc"
+        - $ref: "#/components/schemas/UserDefaultPropDoc"
+        - type: object
+          properties:
+            password:
+              description: 密码
+              type: string
+            phoneCode:
+              description: 手机验证码
+              type: string
+            emailCode:
+              description: 邮箱验证码
+              type: string
+
+    MongoDefault:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+        updateAt:
+          type: string
+          format: date-time
+        updateBy:
+          type: string
+        createAt:
+          type: string
+          format: date-time
+        createBy:
+          type: string
+
+    Err:
+      type: object
+      required:
+        - name
+        - message
+      properties:
+        code:
+          type: string
+        type:
+          type: string
+        message:
+          type: boolean
+        name:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              keyword:
+                type: string
+              message:
+                type: string
+              path:
+                type: string
+              value:
+                type: string
+
+  securitySchemes:
+    bearerAuth: # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
